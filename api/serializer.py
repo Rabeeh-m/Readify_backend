@@ -1,4 +1,4 @@
-from api.models import User, Profile
+from api.models import User, Profile, Book
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
@@ -66,3 +66,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+    
+
+class BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ('id', 'title', 'authors', 'genre', 'publication_date', 'description', 'book_file', 'cover_image', 'uploaded_by', 'created_at')
+        read_only_fields = ('uploaded_by', 'created_at')
