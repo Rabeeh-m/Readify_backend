@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     
     # Third Party Apps
     'rest_framework',
-    'rest_framework_ simplejwt.token_ blacklist',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     
 ]
@@ -95,6 +95,7 @@ DATABASES = {
     }
 }
 
+AUTH_USER_MODEL = 'api.User'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
