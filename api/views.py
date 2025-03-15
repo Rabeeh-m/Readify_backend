@@ -14,7 +14,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from api import serializer as api_serializer
 from api import models as api_models
-
+from django.db import IntegrityError
 from django.http import FileResponse
 from django.views.static import serve
 from django.conf import settings
@@ -103,7 +103,115 @@ class UserBooksList(APIView):
         serializer = api_serializer.BookSerializer(books, many=True)
         return Response(serializer.data)           
     
-           
+    
+class ReadingListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        reading_lists = api_models.ReadingList.objects.filter(user=request.user)
+        serializer = api_serializer.ReadingListSerializer(reading_lists, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = api_serializer.ReadingListSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReadingListDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, list_id):
+        try:
+            reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
+            serializer = api_serializer.ReadingListSerializer(reading_list)
+            return Response(serializer.data)
+        except api_models.ReadingList.DoesNotExist:
+            return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, list_id):
+        try:
+            reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
+            serializer = api_serializer.ReadingListSerializer(reading_list, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except api_models.ReadingList.DoesNotExist:
+            return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, list_id):
+        try:
+            reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
+            reading_list.delete()
+            return Response({"message": "Reading list deleted"}, status=status.HTTP_204_NO_CONTENT)
+        except api_models.ReadingList.DoesNotExist:
+            return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+# class ReadingListItemView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, list_id):
+#         try:
+#             reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
+#             serializer = api_serializer.ReadingListItemSerializer(data=request.data)
+#             if serializer.is_valid():
+#                 serializer.save(reading_list=reading_list)
+#                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         except api_models.ReadingList.DoesNotExist:
+#             return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+#     def delete(self, request, list_id, item_id):
+#         try:
+#             reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
+#             item = api_models.ReadingListItem.objects.get(id=item_id, reading_list=reading_list)
+#             item.delete()
+#             return Response({"message": "Book removed from reading list"}, status=status.HTTP_204_NO_CONTENT)
+#         except api_models.ReadingList.DoesNotExist:
+#             return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
+#         except api_models.ReadingListItem.DoesNotExist:
+#             return Response({"error": "Item not found in this reading list"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ReadingListItemView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, list_id):
+        try:
+            reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
+            serializer = api_serializer.ReadingListItemSerializer(data=request.data)
+            if serializer.is_valid():
+                book_id = serializer.validated_data['book'].id
+                if not api_models.Book.objects.filter(id=book_id).exists():
+                    return Response({"error": "Book does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+                try:
+                    serializer.save(reading_list=reading_list)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                except IntegrityError:
+                    return Response(
+                        {"error": "This book is already in the reading list"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except api_models.ReadingList.DoesNotExist:
+            return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, list_id, item_id):
+        try:
+            reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
+            item = api_models.ReadingListItem.objects.get(id=item_id, reading_list=reading_list)
+            item.delete()
+            return Response({"message": "Book removed from reading list"}, status=status.HTTP_204_NO_CONTENT)
+        except api_models.ReadingList.DoesNotExist:
+            return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
+        except api_models.ReadingListItem.DoesNotExist:
+            return Response({"error": "Item not found in this reading list"}, status=status.HTTP_404_NOT_FOUND)
+        
+        
 # Get All Routes
 
 @api_view(['GET'])

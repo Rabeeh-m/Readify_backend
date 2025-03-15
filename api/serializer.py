@@ -1,4 +1,4 @@
-from api.models import User, Profile, Book
+from api.models import User, Profile, Book, ReadingList, ReadingListItem
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
@@ -73,3 +73,23 @@ class BookSerializer(serializers.ModelSerializer):
         model = Book
         fields = ('id', 'title', 'authors', 'genre', 'publication_date', 'description', 'book_file', 'cover_image', 'uploaded_by', 'created_at')
         read_only_fields = ('uploaded_by', 'created_at')
+        
+        
+class ReadingListItemSerializer(serializers.ModelSerializer):
+    book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all())
+    book_details = BookSerializer(source='book', read_only=True)
+    # book_title = serializers.CharField(source='book.title', read_only=True)
+    # book_cover_image = serializers.ImageField(source='book.cover_image', read_only=True)
+    
+    class Meta:
+        model = ReadingListItem
+        fields = ('id', 'book', 'order', 'book_details')
+
+
+class ReadingListSerializer(serializers.ModelSerializer):
+    items = ReadingListItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ReadingList
+        fields = ('id', 'name', 'user', 'created_at', 'items')
+        read_only_fields = ('user', 'created_at')

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from api.models import User,Profile,Book
+from api.models import User,Profile,Book,ReadingList,ReadingListItem
 
 # Register your models here.
 
@@ -12,3 +12,5 @@ class ProfileAdmin(admin.ModelAdmin):
 admin.site.register(User)
 admin.site.register( Profile)
 admin.site.register( Book)
+admin.site.register( ReadingList)
+admin.site.register( ReadingListItem)

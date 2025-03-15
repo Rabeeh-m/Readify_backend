@@ -14,4 +14,8 @@ urlpatterns = [
     path('my-books/', views.UserBooksList.as_view(), name='user-book-list'),
     path('books/<int:book_id>/', views.BookDetailView.as_view(), name='book_detail'),
     path('books/<int:book_id>/delete/', views.BookDeleteView.as_view(), name='book_delete'),
+    path('reading-lists/', views.ReadingListView.as_view(), name='reading_list'),
+    path('reading-lists/<int:list_id>/', views.ReadingListDetailView.as_view(), name='reading_list_detail'),
+    path('reading-lists/<int:list_id>/items/', views.ReadingListItemView.as_view(), name='reading_list_items'),
+    path('reading-lists/<int:list_id>/items/<int:item_id>/', views.ReadingListItemView.as_view(), name='reading_list_items'),  # Updated URL
 ]
