@@ -69,6 +69,10 @@ This repository contains the backend for Readify, a web application for managing
 | `/api/reading-lists/<id>/items/`              | `POST`         | Add book to list              | `IsAuthenticated` |
 | `/api/reading-lists/<id>/items/<item_id>/`    | `DELETE`       | Remove book from list         | `IsAuthenticated` |
 
+  For detailed endpoint documentation:
+    http://127.0.0.1:8000/api/schema/swagger-ui/
+    http://127.0.0.1:8000/api/schema/redoc/
+    
 ## Contributing
 - Fork the repository.
 - Create a feature branch (git checkout -b feature-name).
