@@ -11,6 +11,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.pagination import PageNumberPagination
 
 from api import serializer as api_serializer
 from api import models as api_models
@@ -69,7 +70,40 @@ class BookListCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    
+
+class BookEditView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, book_id):
+        try:
+            book = api_models.Book.objects.get(id=book_id, uploaded_by=request.user)
+            serializer = api_serializer.BookSerializer(book)
+            return Response(serializer.data)
+        except api_models.Book.DoesNotExist:
+            return Response({"error": "Book not found or you don't have permission"}, 
+                          status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, book_id):
+        try:
+            book = api_models.Book.objects.get(id=book_id, uploaded_by=request.user)
+            serializer = api_serializer.BookSerializer(book, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                # Handle file updates separately to avoid required validation
+                if 'book_file' in request.data:
+                    book.book_file = request.data['book_file']
+                if 'cover_image' in request.data:
+                    book.cover_image = request.data['cover_image']
+                
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except api_models.Book.DoesNotExist:
+            return Response({"error": "Book not found or you don't have permission"}, 
+                          status=status.HTTP_404_NOT_FOUND)
+
+
 class BookDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -149,32 +183,6 @@ class ReadingListDetailView(APIView):
             return Response({"message": "Reading list deleted"}, status=status.HTTP_204_NO_CONTENT)
         except api_models.ReadingList.DoesNotExist:
             return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-# class ReadingListItemView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request, list_id):
-#         try:
-#             reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
-#             serializer = api_serializer.ReadingListItemSerializer(data=request.data)
-#             if serializer.is_valid():
-#                 serializer.save(reading_list=reading_list)
-#                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#         except api_models.ReadingList.DoesNotExist:
-#             return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
-
-#     def delete(self, request, list_id, item_id):
-#         try:
-#             reading_list = api_models.ReadingList.objects.get(id=list_id, user=request.user)
-#             item = api_models.ReadingListItem.objects.get(id=item_id, reading_list=reading_list)
-#             item.delete()
-#             return Response({"message": "Book removed from reading list"}, status=status.HTTP_204_NO_CONTENT)
-#         except api_models.ReadingList.DoesNotExist:
-#             return Response({"error": "Reading list not found"}, status=status.HTTP_404_NOT_FOUND)
-#         except api_models.ReadingListItem.DoesNotExist:
-#             return Response({"error": "Item not found in this reading list"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ReadingListItemView(APIView):
